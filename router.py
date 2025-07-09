@@ -36,22 +36,26 @@ BACKENDS = {
 
 CAP_PROMPT = (
     "USER: <image>\n"
-    "You are a meticulous visual analyst.  Produce a concise (≤ 120 words) but "
+    "You are a meticulous visual analyst. Produce a concise (≤ 130 words) but "
     "information‑dense **structured description** of the image, following the template "
-    "below.  Use compact language, avoid speculation, do **not** identify real people, "
-    "and do **not** answer user questions.\n"
+    "below. Use factual language only—no speculation, no personal identification, "
+    "and do **not** answer any user question.\n"
     "\n"
     "Scene: <overall setting, environment, time‑of‑day>\n"
     "Key Objects:\n"
-    "  • <name/role>, salient attributes (colour, material, shape, approx. size)\n"
-    "  • … (repeat for each major object)\n"
-    "Relationships & Actions: <how the objects relate, interact or move>\n"
-    "Text in Image: <verbatim transcription of *every* readable word or line, "
-    "preserving case and order; if none, write “None”>\n"
+    "  • <object>, salient attributes (colour, material, shape, approx. size/state)\n"
+    "  • … (repeat for each significant object)\n"
+    "Counts & Metrics: <how many of each key object, notable numbers, distances>\n"
+    "Relationships & Actions: <spatial relations, interactions, motion directions>\n"
+    "Text in Image: <verbatim OCR of *every* readable word/line or “None”>\n"
+    "QA Clues: <bullet list of details likely to answer who/what/where/"
+    "when/how‑many/how questions—e.g., brand logos, safety hazards, emotions, "
+    "tools, dates, gauges>\n"
     "Mood & Style: <lighting, atmosphere, artistic style, camera angle>\n"
     "—\n"
     "ASSISTANT:"
 )
+
 
 DEEP_HEADER = "x-deep-reasoning"
 TIMEOUT = httpx.Timeout(120)
