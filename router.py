@@ -8,7 +8,7 @@ image in an ongoing chat gets captioned.
 Key changes (≈ 20 LOC):
 1.  **Never mutate the persisted history** – we now create a `clean_msgs` copy
     for the text‑model hop.
-2.  **Always caption the *latest* image** – reverse‑iterate through messages and
+2.  **only caption if new image is added** – reverse‑iterate through messages and
     their `content` blocks.
 3.  Merge caption and user prompt via a *patched* request object so the original
     `body` stays untouched.
@@ -111,6 +111,22 @@ def strip_images(msgs: list) -> list:
         cleaned.append({**m, "content": content})
     return cleaned
 
+def latest_user_has_image(msgs: list | None) -> bool:
+    """
+    Inspect the most‑recent *user* message only and report whether it carries an
+    image_url block.
+    """
+    if not msgs:
+        return False
+    # find the newest user authored message
+    for m in reversed(msgs):
+        if m.get("role") == "user":
+            c = m.get("content")
+            return (
+                isinstance(c, list)
+                and any(isinstance(p, dict) and p.get("type") == "image_url" for p in c)
+            )
+    return False
 
 async def sse_response(text: str) -> StreamingResponse:
     """Send one SSE delta chunk + [DONE] so OpenWebUI can parse it."""
@@ -153,12 +169,16 @@ async def chat(
         raise HTTPException(400, f"unknown model '{body.get('model')}'")
 
     # 2️⃣  Decide whether an image exists ----------------------------------
-    need_image = bool(file) or has_image(body.get("messages"))
+    need_image = bool(file) or latest_user_has_image(body.get("messages"))
 
     if not need_image:
+        # Remove any OLD image blocks so the text model won't choke
+        clean = strip_images(body.get("messages", []))
+        body = {**body, "messages": clean}
         body["model"] = BACKENDS["text"]
         return StreamingResponse(
-            stream_openai(body, TEXT_URL), media_type="text/event-stream"
+            stream_openai(body, TEXT_URL),
+            media_type="text/event-stream",
         )
 
     # 3️⃣  Load / extract image bytes --------------------------------------
@@ -168,6 +188,8 @@ async def chat(
     else:  # embedded image_url path — **reverse‑iterate to get newest**
         img_bytes = mime = None
         for m in reversed(body.get("messages", [])):
+            if m.get("role") != "user":
+                continue
             c = m.get("content", [])
             if not isinstance(c, list):
                 continue
