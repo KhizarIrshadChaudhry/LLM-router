@@ -36,9 +36,23 @@ BACKENDS = {
 
 CAP_PROMPT = (
     "USER: <image>\n"
-    "Describe the image in ≤100 words. Do NOT answer any question here.\n"
+    "You are a meticulous visual analyst.  Produce a concise (≤ 120 words) but "
+    "information‑dense **structured description** of the image, following the template "
+    "below.  Use compact language, avoid speculation, do **not** identify real people, "
+    "and do **not** answer user questions.\n"
+    "\n"
+    "Scene: <overall setting, environment, time‑of‑day>\n"
+    "Key Objects:\n"
+    "  • <name/role>, salient attributes (colour, material, shape, approx. size)\n"
+    "  • … (repeat for each major object)\n"
+    "Relationships & Actions: <how the objects relate, interact or move>\n"
+    "Text in Image: <verbatim transcription of *every* readable word or line, "
+    "preserving case and order; if none, write “None”>\n"
+    "Mood & Style: <lighting, atmosphere, artistic style, camera angle>\n"
+    "—\n"
     "ASSISTANT:"
 )
+
 DEEP_HEADER = "x-deep-reasoning"
 TIMEOUT = httpx.Timeout(120)
 
