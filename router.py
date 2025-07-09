@@ -36,7 +36,7 @@ BACKENDS = {
 
 CAP_PROMPT = (
     "USER: <image>\n"
-    "You are a meticulous visual analyst. Produce a concise (≤ 130 words) but "
+    "You are a meticulous visual analyst. Produce a concise but "
     "information‑dense **structured description** of the image, following the template "
     "below. Use factual language only—no speculation, no personal identification, "
     "and do **not** answer any user question.\n"
@@ -47,7 +47,7 @@ CAP_PROMPT = (
     "  • … (repeat for each significant object)\n"
     "Counts & Metrics: <how many of each key object, notable numbers, distances>\n"
     "Relationships & Actions: <spatial relations, interactions, motion directions>\n"
-    "Text in Image: <verbatim OCR of *every* readable word/line or “None”>\n"
+    "Text in Image: <verbatim OCR of *EVERY* readable word/line/number or “None”>\n"
     "QA Clues: <bullet list of details likely to answer who/what/where/"
     "when/how‑many/how questions—e.g., brand logos, safety hazards, emotions, "
     "tools, dates, gauges>\n"
