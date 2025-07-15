@@ -28,8 +28,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 # ────────────────────────── CONFIG ────────────────────────────────────
-TEXT_URL   = "http://34.168.114.247:8081/v1/chat/completions"   # Qwen‑3‑32B
-VISION_URL = "http://35.188.185.121:8080/v1/chat/completions"   # Qwen‑VL
+TEXT_URL   = "http://34.145.74.173:8081/v1/chat/completions"   # Qwen‑3‑32B
+VISION_URL = "http://34.30.10.52:8080/v1/chat/completions"   # Qwen‑VL
 MODEL_ALIAS = "Neptel-R0VL"
 
 BACKENDS = {
@@ -63,6 +63,24 @@ DEEP_HEADER = "x-deep-reasoning"
 DATA_URL_RX = re.compile(r"^data:(?P<mime>[^;]+);base64,(?P<b64>.+)$", re.I)
 TIMEOUT = httpx.Timeout(120)
 
+
+
+
+# ──────────────────────── NON‑STANDARD FIELDS ────────────────────────
+# Extra keys that OpenWebUI sometimes adds and that vLLM ≤ 0.8 rejects.
+NON_OPENAI_KEYS = {
+    "features",          # {"web_search": …}
+    "metadata",          # request/response tracking data
+    "options",           # misc. UI flags
+    "background_tasks",  # async jobs started by WebUI
+    # → add any new ones you spot in the logs
+}
+
+def purge_extra(d: dict) -> dict:
+    """Return a shallow copy without the WebUI‑specific keys."""
+    return {k: v for k, v in d.items() if k not in NON_OPENAI_KEYS}
+
+    
 # ────────────────────────── APP SETUP ─────────────────────────────────
 app = FastAPI(title="Qwen Enterprise Gateway (pattern‑2)")
 app.add_middleware(
@@ -165,7 +183,10 @@ async def proxy_completions(
     # ╭────────────────────────── TEXT‑ONLY PATH ─────────────────────────╮
     if not need_image:
         clean = strip_images(body.get("messages", []))
-        body = {**body, "messages": clean, "model": BACKENDS["text"]}
+
+        body  = purge_extra({**body, "messages": clean,
+                             "model": BACKENDS["text"]})
+                             
         return StreamingResponse(
             stream_openai(body, TEXT_URL),
             media_type="text/event-stream",
@@ -264,6 +285,7 @@ async def proxy_completions(
         }
 
     # 7️⃣  Forward to text model -------------------------------------------
+    patched = purge_extra(patched)          # ← NEW: drop WebUI extras
     return StreamingResponse(
         stream_openai(patched, TEXT_URL),
         media_type="text/event-stream",
